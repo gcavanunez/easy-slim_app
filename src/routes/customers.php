@@ -32,7 +32,7 @@ $app->get('/api/customers', function (Request $request, Response $response) {
 
   return $response;
 });
-$app->get('/api/customers/{id}', function (Request $request, Response $response) {
+$app->get('/api/customer/{id}', function (Request $request, Response $response) {
   $id = $request->getAttribute('id');
   $sql = "SELECT * FROM customers WHERE id = $id";
   try {
@@ -56,7 +56,7 @@ $app->get('/api/customers/{id}', function (Request $request, Response $response)
   return $response;
 });
 // ADD Customer
-$app->post('/api/customers/add', function (Request $request, Response $response) {
+$app->post('/api/customer/add', function (Request $request, Response $response) {
 
   $first_name = $request->getParam('first_name');
   $last_name = $request->getParam('last_name');
@@ -96,9 +96,9 @@ $app->post('/api/customers/add', function (Request $request, Response $response)
 
   return $response;
 });
-// ADD Customer
-$app->post('/api/customers/add', function (Request $request, Response $response) {
-
+// Update Customer
+$app->put('/api/customer/update/{id}', function (Request $request, Response $response) {
+  $id = $request->getAttribute('id');
   $first_name = $request->getParam('first_name');
   $last_name = $request->getParam('last_name');
   $phone = $request->getParam('phone');
@@ -107,7 +107,15 @@ $app->post('/api/customers/add', function (Request $request, Response $response)
   $city = $request->getParam('city');
   $state = $request->getParam('state');
 
-  $sql = "INSERT INTO customers (first_name,last_name,phone,email,address,city,state) VALUES (:first_name,:last_name,:phone,:email,:address,:city,:state)";
+  $sql = "UPDATE customers SET
+            first_name = :first_name,
+            last_name = :last_name,
+            phone = :phone,
+            email = :email,
+            address = :address,
+            city = :city,
+            state = :state
+          WHERE id = $id";
   try {
     //  GET DB Object
     $db = new db();
@@ -122,7 +130,33 @@ $app->post('/api/customers/add', function (Request $request, Response $response)
     $stmt->bindParam(':city', $city);
     $stmt->bindParam(':state', $state);
     $stmt->execute();
-    $msg['text'] = 'Customer added';
+    $msg['text'] = 'Customer updated';
+    $res['notice'] = $msg;
+    return $response->withStatus(200)
+      ->withHeader('Content-Type', 'application/json')
+      ->write(json_encode($res));
+  } catch (PDOException $e) {
+    $error['text'] = $e->getMessage();
+    $err['error'] = $error;
+    return $response->withStatus(500)
+      ->withHeader('Content-Type', 'application/json')
+      ->write(json_encode($err));
+  }
+
+  return $response;
+});
+// Update Customer
+$app->delete('/api/customer/delete/{id}', function (Request $request, Response $response) {
+  $id = $request->getAttribute('id');
+
+  $sql = "DELETE FROM customers WHERE id = $id";
+  try {
+    //  GET DB Object
+    $db = new db();
+    $db = $db->connect();
+    $stmt = $db->prepare($sql);
+    $stmt->execute();
+    $msg['text'] = 'Customer deleted';
     $res['notice'] = $msg;
     return $response->withStatus(200)
       ->withHeader('Content-Type', 'application/json')
